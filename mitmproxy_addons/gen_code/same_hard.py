@@ -142,15 +142,38 @@ def framework_main(run, users):
 
     import asyncio
 
+    done, _ = asyncio.run(asyncio.wait([_run_it(run, user) for user in users]))
+
+    _report(done)
+    
+    
+async def _run_it(run, user):
+    try:
+        logging.info(f"\033[1;31m{' '*20}\033[0m")
+        logging.info(f"\033[1;31m{'-'*10} {user.session_id} {'-'*10}\033[0m")
+
+        runner = genRunner(user)
+        runner.send(None)
+
+        await run(runner, user)
+        
+    except :
+        traceback.print_exc()    
+    finally:
+        logging.info(f"\033[1;31m{'^'*10} {user.session_id} {'^'*10}\033[0m")
+        logging.info(f"\033[1;31m{' '*20}\033[0m")
+
+    return user
+
+    
+def _report(done):
     sessions = []
     api_errors = {}
     exc_info = {}
     messages = {}
-
-    done, _ = asyncio.run(asyncio.wait([_run_it(run, user) for user in users]))
-
+        
     for item in done:
-        user: User = item.result()
+        user: CommonUser = item.result()
         sessions.append(user.session_id)
         api_errors[user.session_id] = user.api_errors
         exc_info[user.session_id] = user.exc_info
@@ -179,25 +202,10 @@ def framework_main(run, users):
                 logging.info(f"\t{message}")
                 print()
 
-    logging.info(f"共运行: \033[1;31m {len(sessions)} - {sessions}\033[0m")
+    logging.info(f"共运行: \033[1;31m {len(sessions)} - {sessions}\033[0m")    
 
-async def _run_it(run, user):
-    try:
-        logging.info(f"\033[1;31m{' '*20}\033[0m")
-        logging.info(f"\033[1;31m{'-'*10} {user.session_id} {'-'*10}\033[0m")
 
-        runner = genRunner(user)
-        runner.send(None)
 
-        await run(runner, user)
-        
-    except :
-        traceback.print_exc()    
-    finally:
-        logging.info(f"\033[1;31m{'^'*10} {user.session_id} {'^'*10}\033[0m")
-        logging.info(f"\033[1;31m{' '*20}\033[0m")
-
-    return user
 
 
 
